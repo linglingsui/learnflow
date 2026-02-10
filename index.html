@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LearnFlow - 智能任务追踪系统</title>
+  <!-- 引入 jsPDF 和 html2canvas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css">
+  
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        </svg>
+        LearnFlow
+      </h1>
+      <p>智能任务追踪系统 • 2026.02.08 – 2026.02.28</p>
+           <!-- 专注模式退出按钮（默认隐藏） -->
+    <button id="exit-zen-mode" class="zen-exit-btn">退出专注</button>
+    </header>
+
+    <!-- 番茄钟区域 -->
+    <div class="pomodoro-container">
+      <h3>🍅 番茄钟</h3>
+      <div class="pomodoro-clock" id="pomodoro-clock">25:00</div>
+      <div class="pomodoro-controls">
+        <button onclick="startPomodoro()">开始</button>
+        <button onclick="pausePomodoro()">暂停</button>
+        <button onclick="resetPomodoro()">重置</button>
+      </div>
+    </div>
+
+    <!-- 导出报告按钮（移动至右上角） -->
+    <button class="export-button" onclick="exportReport()">📄 导出报告</button>
+
+    <!-- 新增：专注模式和备份恢复按钮 -->
+    <div class="utility-buttons">
+      <button class="utility-button" id="zen-mode">🧘 专注模式</button>
+      <button class="utility-button" id="backup-data">💾 备份数据</button>
+      <input type="file" id="restore-file" accept=".json" style="display: none;">
+      <button class="utility-button" id="restore-data">📤 恢复数据</button>
+    </div>
+
+    <div class="cards-container">
+      <!-- 左侧：任务卡片 -->
+      <div class="main-card">
+        <div class="section-title">📅 今日任务</div>
+        <div class="date-picker">
+          <label for="date-select">选择日期：</label>
+          <select id="date-select" onchange="loadTasks()">
+            <option value="2026-02-08">2026-02-08</option>
+            <option value="2026-02-09">2026-02-09</option>
+            <option value="2026-02-10">2026-02-10</option>
+          </select>
+        </div>
+
+        <div class="add-task-form">
+          <input type="text" id="new-task-input" placeholder="输入任务..." />
+          <div class="time-range-select">
+            <select id="time-slot">
+              <option value="07:00-08:00">7:00 - 8:00</option>
+              <option value="07:30-08:30">7:30 - 8:30</option>
+              <option value="08:00-09:00">8:00 - 9:00</option>
+              <option value="08:30-09:30">8:30 - 9:30</option>
+              <option value="09:00-10:00">9:00 - 10:00</option>
+              <option value="19:00-20:00">19:00 - 20:00</option>
+              <option value="20:00-21:00">20:00 - 21:00</option>
+              <option value="21:00-22:00">21:00 - 22:00</option>
+            </select>
+          </div>
+          <select id="priority-select">
+            <option value="low">低</option>
+            <option value="medium">中</option>
+            <option value="high">高</option>
+          </select>
+          <button onclick="addTask()">添加</button>
+        </div>
+
+        <div id="task-container">加载中...</div>
+      </div>
+
+      <!-- 右侧：统计卡片 -->
+      <div class="stats-card">
+        <div class="section-title">📊 学习统计</div>
+        <div class="progress-ring" id="progress-ring">
+          <svg viewBox="0 0 100 100">
+            <circle class="circle" cx="50" cy="50" r="45" />
+            <circle class="circle-progress" cx="50" cy="50" r="45" />
+          </svg>
+          <div class="progress-text" id="progress-text">0%</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">当日完成率</div>
+          <div class="stat-value" id="completion-rate">0%</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">当前积分</div>
+          <div class="stat-value" id="points">0</div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">💎 可兑换奖励</div>
+        </div>
+
+        <div class="section-title">📈 近7天完成情况</div>
+        <div class="chart-container">
+          <canvas id="daily-chart"></canvas>
+        </div>
+
+        <div class="section-title">🎁 奖励清单</div>
+        <div class="reward-list">
+          <div class="reward-item">
+            <span>看一集动漫</span>
+            <span class="reward-points">100分</span>
+          </div>
+          <div class="reward-item">
+            <span>点一杯奶茶</span>
+            <span class="reward-points">200分</span>
+          </div>
+          <div class="reward-item">
+            <span>自由半天</span>
+            <span class="reward-points">500分</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 主题切换按钮 -->
+    <div class="theme-toggle">
+      <button onclick="toggleTheme()">🌙</button>
+    </div>
+  </div>
+
+  <!-- 任务详情模态框 -->
+  <div id="task-detail-modal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <div id="modal-content">
+        <!-- 动态内容 -->
+      </div>
+      <button id="close-detail" class="modal-close-btn">关闭</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
